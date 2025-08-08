@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import wallet, { type Token } from "~utils/wallet";
-import { viemClients, chains as allChains } from "~utils/viem";
+import { getChainClient, chains as allChains } from "~utils/viem";
 
 export const getChainTokens = () => {
   const currentChainId = wallet.currentChainId;
-  const currentChain = viemClients(currentChainId);
+  const currentChain = getChainClient(currentChainId);
   if (!currentChain) {
     return [];
   } else {

@@ -25,6 +25,7 @@ export class WalletCore {
   currentChainId: number;
   // 修改代币列表属性，使用Map按链ID存储代币
   tokens: Map<number, Token[]>;
+  customChains: any[];
 
   constructor() {
     this.accounts = [];
@@ -36,6 +37,7 @@ export class WalletCore {
     this.initialized = false;
     this.currentChainId = mainnet.id;
     this.tokens = new Map<number, Token[]>(); // 初始化为Map
+    this.customChains = []; // 初始化自定义链列表
   }
 
   // 初始化钱包
@@ -63,6 +65,28 @@ export class WalletCore {
               this.tokens.set(Number(chainId), storedData.tokens[chainId]);
             });
           }
+        }
+        
+        // 初始化自定义链数据
+        if (storedData.customChains) {
+          this.customChains = storedData.customChains;
+        } else {
+          // 设置默认的自定义链列表
+          this.customChains = [
+            {
+              id: 1,
+              name: "Ethereum Mainnet",
+              network: "ethereum",
+              nativeCurrency: {
+                name: "Ether",
+                symbol: "ETH",
+                decimals: 18
+              },
+              rpcUrls: {
+                default: { http: ["https://mainnet.infura.io/v3"] }
+              }
+            }
+          ];
         }
       }
 
@@ -764,7 +788,94 @@ export class WalletCore {
     const { getBalance } = await import("~utils/ethers");
     return await getBalance(accountAddress, chain);
   }
+  
+  // 添加链到钱包
+  async addChain(chainConfig: {
+    id: number;
+    name: string;
+    network: string;
+    nativeCurrency: {
+      name: string;
+      symbol: string;
+      decimals: number;
+    };
+    rpcUrls: {
+      default: { http: string[] };
+      public?: { http: string[] };
+    };
+    blockExplorers?: {
+      default: { name: string; url: string };
+    };
+    testnet?: boolean;
+  }) {
+    try {
+      // 导入 createPublicClient 和 http
+      const { createPublicClient, http } = await import("viem");
+      
+      // 创建新的链客户端
+      const newChainClient = createPublicClient({
+        chain: chainConfig,
+        transport: http(chainConfig.rpcUrls.default.http[0])
+      });
+      
+      // 尝试连接以验证配置
+      await newChainClient.getBlockNumber();
+      
+      // 如果成功，添加到存储中
+      const storedData = await this.getStoredData();
+      let customChains = storedData?.customChains || [];
+      
+      // 检查链是否已存在
+      const existingChainIndex = customChains.findIndex(
+        (chain: any) => chain.id === chainConfig.id
+      );
+      
+      if (existingChainIndex >= 0) {
+        // 更新现有链配置
+        customChains[existingChainIndex] = chainConfig;
+      } else {
+        // 添加新链
+        customChains.push(chainConfig);
+      }
+      
+      // 保存到存储
+      await this.updateStoredData({ customChains });
+      
+      return { success: true, chain: chainConfig };
+    } catch (error) {
+      console.error("添加链失败:", error);
+      return { success: false, error: error.message };
+    }
+  }
+  
+  // 获取所有自定义链
+  async getCustomChains() {
+    const storedData = await this.getStoredData();
+    return storedData?.customChains || [];
+  }
+  
+  // 删除自定义链
+  async removeCustomChain(chainId: number) {
+    try {
+      const storedData = await this.getStoredData();
+      let customChains = storedData?.customChains || [];
+      
+      // 过滤掉要删除的链
+      customChains = customChains.filter(
+        (chain: any) => chain.id !== chainId
+      );
+      
+      // 保存到存储
+      await this.updateStoredData({ customChains });
+      
+      return { success: true };
+    } catch (error) {
+      console.error("删除链失败:", error);
+      return { success: false, error: error.message };
+    }
+  }
 }
+
 const wallet = new WalletCore();
 wallet.initialize();
 

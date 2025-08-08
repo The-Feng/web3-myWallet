@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Popup, Space, Button, Tabs, Toast } from 'antd-mobile'
-import { chains, viemClients } from "~/utils/viem"
+import { getChainClient } from "~/utils/viem"
 import wallet, { type Token } from '~utils/wallet';
 import { useNavigate } from 'react-router-dom';
 import WalletHeader from './components/WalletHeader';
@@ -30,8 +30,8 @@ export default function Homepage() {
   const navigate = useNavigate()
 
   const currentChain = useMemo(() => {
-    return viemClients(currentChainId);
-  }, [currentChainId, viemClients]);
+    return getChainClient(currentChainId);
+  }, [currentChainId]);
 
   const accountAddress = useMemo(() => {
     console.log("useMemo wallet 变化");

@@ -5,56 +5,6 @@ export const config = {
   matches: ["https://example.com/*"],
   all_frames: true,
 };
-// type ResponseContentType = {
-//   result: string[];
-// };
-
-// async function requestAccounts() {
-//   // 检查是否在浏览器扩展环境中
-//   if (typeof chrome === "undefined" || !chrome.runtime) {
-//     console.warn("Chrome runtime is not available");
-//     return;
-//   }
-
-//   try {
-//     const response: ResponseContentType = await new Promise(
-//       (resolve, reject) => {
-//         chrome.runtime.sendMessage(
-//           { method: "eth_requestAccounts" },
-//           (response) => {
-//             // 检查是否有错误
-//             if (chrome.runtime.lastError) {
-//               console.warn(
-//                 "Chrome runtime error:",
-//                 chrome.runtime.lastError.message
-//               );
-//               reject(new Error(chrome.runtime.lastError.message));
-//             } else {
-//               resolve(response);
-//             }
-//           }
-//         );
-//       }
-//     );
-
-//     if (response && response.result) {
-//       console.log("用户授权的账户地址:", response.result);
-//       return response.result;
-//     } else {
-//       console.log("未授权");
-//     }
-//   } catch (error) {
-//     console.error("请求账户时发生错误:", error);
-//   }
-// }
-
-// // 调用请求
-// requestAccounts();
-
-// // 安全地将钱包实例添加到window对象
-// if (typeof window !== "undefined") {
-//   window.myWallet = myWallet;
-// }
 
 // 创建 EthereumProvider
 class ChromeEthereumProvider {
@@ -95,6 +45,8 @@ class ChromeEthereumProvider {
         // 这里应该实现连接钱包的逻辑
         // throw new Error("eth_requestAccounts not implemented");
         return wallet.accounts;
+      case "wallet_addEthereumChain":
+        return wallet.addChain(params[0]);
 
       default:
         throw new Error(`Method ${method} not supported`);
@@ -102,23 +54,24 @@ class ChromeEthereumProvider {
   }
 
   private async switchEthereumChain(params: any[]) {
-    if (!params || !params[0] || !params[0].chainId) {
-      throw {
-        code: -32602,
-        message: "Invalid params",
-      };
-    }
+    wallet.notifyNetworkChanged(params[0].chainId);
+    // if (!params || !params[0] || !params[0].chainId) {
+    //   throw {
+    //     code: -32602,
+    //     message: "Invalid params",
+    //   };
+    // }
 
-    const response = await this.sendMessage({
-      method: "wallet_switchEthereumChain",
-      params: params,
-    });
+    // const response = await this.sendMessage({
+    //   method: "wallet_switchEthereumChain",
+    //   params: params,
+    // });
 
-    if (!response.success) {
-      throw response.error;
-    }
+    // if (!response.success) {
+    //   throw response.error;
+    // }
 
-    return response.result;
+    // return response.result;
   }
 
   private sendMessage(message: any): Promise<any> {
@@ -251,4 +204,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-console.log("Content script loaded")
+console.log("Content script loaded");

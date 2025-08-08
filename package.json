@@ -6,6 +6,7 @@
   "author": "Plasmo Corp. <foss@plasmo.com>",
   "scripts": {
     "dev": "plasmo dev",
+    "dev:poll": "CHOKIDAR_USEPOLLING=true WATCHPACK_POLLING=true plasmo dev",
     "build": "plasmo build",
     "package": "plasmo package"
   },
